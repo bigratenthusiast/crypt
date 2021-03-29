@@ -1,5 +1,7 @@
 package me.bigratenthusiast.crypt
 
+import me.bigratenthusiast.crypt.Utils.sendMainTitle
+import me.bigratenthusiast.crypt.Utils.sendSubTitle
 import org.bukkit.*
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -11,8 +13,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityResurrectEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.*
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.potion.PotionEffect
@@ -35,13 +36,8 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         when (command.name.toLowerCase()){
             "quickheal" -> {
-                if (args[0].isEmpty()) {
-                    sender.sendMessage("${ChatColor.RED}ERROR: You must specify a player!")
-                    return false
-                }
-
                 val player: Player = server.getPlayer(args[0]) ?: kotlin.run {
-                    sender.sendMessage("There is no player by that name.")
+                    sender.sendMessage("${ChatColor.RED}There is no player by that name!")
                     return false
                 }
 
@@ -52,12 +48,18 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
             }
 
             "deathmatch" -> {
+                var secs = 5
                 Bukkit.broadcastMessage("${ChatColor.RED}Death match initiated by ${sender.name}")
-                server.onlinePlayers.forEach{player ->
-                    if (player.gameMode == GameMode.SURVIVAL){
-                        server.dispatchCommand(server.consoleSender, "spreadplayers -65 -346 10 5 under 85 true @a[gamemode=survival]")
+
+                do {
+                    server.onlinePlayers.forEach { player ->
+                        player.sendMainTitle(ChatColor.RED, "$secs...")
                     }
-                }
+                    Thread.sleep(1000)
+                    secs -= 1
+                } while (secs > 0)
+
+                server.dispatchCommand(server.consoleSender, "spreadplayers -65 -346 10 5 under 85 true @a[gamemode=survival]")
                 return true
             }
 
@@ -88,12 +90,12 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
         if (player.gameMode == GameMode.SURVIVAL) {
             if (player.location.blockY > 240) {
                 player.teleport(player.location.subtract(0.toDouble(), 2.toDouble(), 0.toDouble()))
-                player.sendMessage("${ChatColor.RED}You cannot go any higher than this!")
+                player.sendMainTitle(ChatColor.RED, "You cannot go any higher than this!")
             }
             if (player.location.blockY < 60) {
                 player.fallDistance = 0.toFloat()
                 Utils.playerClear(player)
-                player.sendMessage("${ChatColor.YELLOW}Whoops!")
+                player.sendSubTitle(ChatColor.YELLOW, "Looks like you fell out of the map!")
             }
         }
     }
@@ -104,17 +106,17 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
             val player = event.entity as Player
             val hollowTotem = ItemStack(Material.FIREWORK_STAR)
             val im = hollowTotem.itemMeta
-            im?.setDisplayName("§rHollow Totem")  ?: return
+            im?.setDisplayName("§rHollow Totem") ?: return
             hollowTotem.itemMeta = im
             if (player.inventory.itemInOffHand.type == Material.AIR) {
                 player.inventory.setItemInOffHand(hollowTotem)
             } else {
                 player.inventory.addItem(hollowTotem)
             }
-            player.sendMessage("Your totem will recharge in forty-five seconds.")
+            player.sendSubTitle(ChatColor.GOLD, "Your totem will recharge in 45 seconds.")
             server.scheduler.scheduleSyncDelayedTask(this, {
                 if (player.gameMode == GameMode.SURVIVAL) {
-                    player.sendMessage("Your totem is now recharged.")
+                    player.sendSubTitle(ChatColor.GOLD, "Your totem is now recharged.")
                     player.inventory.forEach(Consumer { possibleHollow: ItemStack? ->
                         if (possibleHollow != null && possibleHollow.type == Material.FIREWORK_STAR) {
                             val totem = ItemStack(Material.TOTEM_OF_UNDYING)
@@ -133,7 +135,7 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
             val player = event.player
             if (player.inventory.boots?.itemMeta?.displayName?.contains("Rush Boots") ?: kotlin.run { return } && player.inventory.itemInMainHand.type == Material.GOLDEN_AXE) {
                 if (dashCoolDowns.contains(player.uniqueId)) {
-                    player.sendMessage("You are on cooldown to use that ability.")
+                    player.sendMainTitle(ChatColor.RED, "You are on cool down to use that ability!")
                 } else {
                     player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 200, 4, true, false))
                     player.playEffect(EntityEffect.BREAK_EQUIPMENT_CHESTPLATE)
@@ -144,10 +146,33 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
                     dashCoolDowns.add(player.uniqueId)
                     server.scheduler.scheduleSyncDelayedTask(this, {
                         dashCoolDowns.remove(player.uniqueId)
-                        player.sendMessage("You can now use that ability.")
+                        player.sendSubTitle(ChatColor.GOLD, "You can now use that ability!")
                     }, dashCoolDown)
                 }
             }
+        }
+    }
+
+    @EventHandler
+    fun onUseFishingRod(event: PlayerFishEvent) {
+        if (event.hook.isOnGround && event.player.inventory.itemInMainHand.itemMeta?.displayName?.contains("Grappling Hook") ?: kotlin.run { return }) {
+            event.player.velocity = event.player.location.direction.multiply(3)
+            event.player.playSound(event.player.location, Sound.ENTITY_SPIDER_AMBIENT, 100.toFloat(), 1.toFloat())
+            event.player.inventory.addItem(ItemStack(Material.FIRE))
+        }
+    }
+
+    @EventHandler
+    fun onRodBreak(event: PlayerItemBreakEvent) {
+        if (event.brokenItem == ItemStack(Material.FISHING_ROD)) {
+            val hook = ItemStack(Material.FISHING_ROD)
+            val im = hook.itemMeta
+            im?.setDisplayName("Grappling Hook") ?: return
+            hook.itemMeta = im
+
+            event.player.sendSubTitle(ChatColor.GOLD, "Your Grappling Hook will be given back to you in 45 seconds.")
+            Thread.sleep((45 * 1000))
+            event.player.inventory.addItem(hook)
         }
     }
 }
