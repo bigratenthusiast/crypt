@@ -1,7 +1,6 @@
 package me.bigratenthusiast.crypt
 
-import net.md_5.bungee.api.ChatMessageType
-import net.md_5.bungee.api.chat.TextComponent
+import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.GameMode
 import org.bukkit.Location
@@ -26,5 +25,9 @@ object Utils {
 
     fun Player.sendSubTitle(color: ChatColor, message: String, secs: Int=3) {
         sendTitle("", "$color$message", 0, secs * 20, 40)
+    }
+
+    fun Player.sendActionBarMessage(color: ChatColor, message: String) {
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "title $name actionbar \"$color$message\"")
     }
 }

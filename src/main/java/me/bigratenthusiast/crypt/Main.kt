@@ -1,5 +1,6 @@
 package me.bigratenthusiast.crypt
 
+import me.bigratenthusiast.crypt.Utils.sendActionBarMessage
 import org.bukkit.*
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -11,7 +12,10 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityResurrectEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.player.*
+import org.bukkit.event.player.PlayerFishEvent
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.potion.PotionEffect
@@ -19,7 +23,6 @@ import org.bukkit.potion.PotionEffectType
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
-import org.bukkit.event.player.PlayerTeleportEvent
 
 
 const val totemCoolDown: Long = 900
@@ -27,6 +30,7 @@ const val dashCoolDown: Long = 620
 const val untilSlow: Long = 200
 const val rodCoolDown: Long = 300
 val dashCoolDowns: CopyOnWriteArrayList<UUID> = CopyOnWriteArrayList()
+val rodCoolDowns: CopyOnWriteArrayList<UUID> = CopyOnWriteArrayList()
 
 
 class Main : JavaPlugin(), Listener, CommandExecutor {
@@ -35,7 +39,7 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        when (command.name.toLowerCase()){
+        when (command.name.toLowerCase()) {
             "quickheal" -> {
                 val player: Player = server.getPlayer(args[0]) ?: kotlin.run {
                     sender.sendMessage("${ChatColor.RED}There is no player by that name!")
@@ -65,14 +69,20 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
             }
 
             "rematch" -> {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!minecraft:player,type=!minecraft:villager,type=!minecraft:painting,type=!minecraft:item_frame]")
+                Bukkit.dispatchCommand(
+                    Bukkit.getConsoleSender(),
+                    "kill @e[type=!minecraft:player,type=!minecraft:villager,type=!minecraft:painting,type=!minecraft:item_frame]"
+                )
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "effect clear @e")
-                server.onlinePlayers.forEach{Utils.playerClear(it)}
+                server.onlinePlayers.forEach { Utils.playerClear(it) }
                 return true
             }
 
             "killall" -> {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!minecraft:player,type=!minecraft:villager,type=!minecraft:painting,type=!minecraft:item_frame]")
+                Bukkit.dispatchCommand(
+                    Bukkit.getConsoleSender(),
+                    "kill @e[type=!minecraft:player,type=!minecraft:villager,type=!minecraft:painting,type=!minecraft:item_frame]"
+                )
             }
 
             else -> {
@@ -83,7 +93,9 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
     }
 
     @EventHandler
-    fun onPlayerDeath(event: PlayerDeathEvent) {event.entity.gameMode = GameMode.SPECTATOR}
+    fun onPlayerDeath(event: PlayerDeathEvent) {
+        event.entity.gameMode = GameMode.SPECTATOR
+    }
 
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
@@ -140,7 +152,8 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
                 } else {
                     player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 200, 4, true, false))
                     player.playEffect(EntityEffect.BREAK_EQUIPMENT_CHESTPLATE)
-                    server.scheduler.scheduleSyncDelayedTask(this,
+                    server.scheduler.scheduleSyncDelayedTask(
+                        this,
                         { player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 120, 2, true, false)) },
                         untilSlow
                     )
@@ -156,21 +169,19 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
 
     @EventHandler
     fun onUseFishingRod(event: PlayerFishEvent) {
-        var hook: ItemStack;
         if (event.hook.isOnGround && event.player.inventory.itemInMainHand.itemMeta?.displayName?.contains("Grappling Hook") ?: kotlin.run { return }) {
+            if (rodCoolDowns.contains(event.player.uniqueId)) {
+                event.player.sendMessage("${ChatColor.RED}You cannot use that ability yet!")
+                event.player.playSound(event.player.location, Sound.ENTITY_VILLAGER_NO, 100.toFloat(), 1.toFloat())
+                return
+            }
             event.player.velocity = event.player.location.direction.multiply(3)
             event.player.playSound(event.player.location, Sound.ENTITY_SPIDER_AMBIENT, 100.toFloat(), 1.toFloat())
-            event.player.inventory.forEach { possibleHook: ItemStack? ->
-                if (possibleHook != null && possibleHook.itemMeta!!.displayName.contains("Grappling Hook")) {
-                    hook = possibleHook
-                    event.player.sendMessage("${ChatColor.GOLD}Your fishing rod will be returned to you in 15 seconds.")
-                    event.player.inventory.remove(possibleHook)
-                    server.scheduler.scheduleSyncDelayedTask(this, {
-                        event.player.sendMessage("${ChatColor.GOLD}Your Grappling Hook is returned!")
-                        event.player.inventory.addItem(hook)
-                    }, rodCoolDown)
-                }
-            }
+            event.player.sendMessage("${ChatColor.GOLD}Your Grappling Hook will be recharged in 15 seconds.")
+            rodCoolDowns.add(event.player.uniqueId)
+            server.scheduler.scheduleSyncDelayedTask(this, {
+                rodCoolDowns.remove(event.player.uniqueId)
+            }, rodCoolDown)
         }
     }
 }
