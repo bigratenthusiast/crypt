@@ -1,6 +1,14 @@
 package me.bigratenthusiast.crypt
 
-import me.bigratenthusiast.crypt.Utils.sendActionBarMessage
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.Clipboard
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.function.operation.Operation
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.session.ClipboardHolder
 import org.bukkit.*
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -20,6 +28,8 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import java.io.File
+import java.io.FileInputStream
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
@@ -29,6 +39,10 @@ const val totemCoolDown: Long = 900
 const val dashCoolDown: Long = 620
 const val untilSlow: Long = 200
 const val rodCoolDown: Long = 300
+
+const val schematicFilename = "crypt_pvp_s1_082721_iter1.schem"
+val schematicPasteLocation = BlockVector3.at(7, 24, -1)
+
 val dashCoolDowns: CopyOnWriteArrayList<UUID> = CopyOnWriteArrayList()
 val rodCoolDowns: CopyOnWriteArrayList<UUID> = CopyOnWriteArrayList()
 
@@ -36,6 +50,7 @@ val rodCoolDowns: CopyOnWriteArrayList<UUID> = CopyOnWriteArrayList()
 class Main : JavaPlugin(), Listener, CommandExecutor {
     override fun onEnable() {
         this.server.pluginManager.registerEvents(this, this)
+        dataFolder.mkdir()
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
@@ -76,6 +91,24 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "effect clear @e")
                 server.onlinePlayers.forEach { Utils.playerClear(it) }
                 return true
+            }
+
+            "resetmap" -> {
+                val schematic =
+                    File(dataFolder.absoluteFile.toString() + "/schematics/" + schematicFilename)
+                try {
+                    val format: ClipboardFormat = ClipboardFormats.findByFile(schematic)!!
+                    val clipboard: Clipboard = format.getReader(FileInputStream(schematic)).read()
+                    val world = BukkitAdapter.adapt((sender as Player).world)
+
+                    WorldEdit.getInstance().newEditSession(world).use { editSession ->
+                        val operation: Operation =
+                            ClipboardHolder(clipboard).createPaste(editSession).to(schematicPasteLocation).build()
+                        Operations.complete(operation)
+                    }
+                } catch (e: Exception) {
+                    Bukkit.broadcastMessage(e.toString())
+                }
             }
 
             "killall" -> {
