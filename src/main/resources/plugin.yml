@@ -2,19 +2,36 @@ name: Crypt
 version: ${project.version}
 main: me.bigratenthusiast.crypt.Main
 api-version: 1.16
-authors: [ bigratenthusiast ]
+authors: [bigratenthusiast, sourtaste]
 description: Helpful custom commands for the crypt and catacombs pvp minigame server
 website: chroma.bigrat.monster
 commands:
   quickheal:
     description: Heal and fully saturate a player
     usage: quickheal [player]
+    permission: crypt.*
+    permission-message: You do not have permission to use this command.
   deathmatch:
     description: Initiate a deathmatch between all players in survival mode
     usage: deathmatch
+    permission: crypt.*
+    permission-message: You do not have permission to use this command.
   rematch:
     description: Teleport everyone to spawn, clear them, and set them to survival
     usage: rematch
+    permission: crypt.*
+    permission-message: You do not have permission to use this command.
+  resetmap:
+    description: Reset the map (laggy)
+    usage: resetmap
+    permission: crypt.*
+    permission-message: You do not have permission to use this command.
   killall:
     description: Kills certain entities
     usage: killall
+    permission: crypt.*
+    permission-message: You do not have permission to use this command.
+
+permissions:
+  crypt.*:
+    default: op
