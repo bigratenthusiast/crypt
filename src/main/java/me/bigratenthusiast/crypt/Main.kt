@@ -181,7 +181,7 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
             val player = event.player
             if (player.inventory.boots?.itemMeta?.displayName?.contains("Rush Boots") ?: kotlin.run { return } && player.inventory.itemInMainHand.type == Material.GOLDEN_AXE) {
                 if (dashCoolDowns.contains(player.uniqueId)) {
-                    player.sendMessage("${ChatColor.RED}You are on cool down to use that ability!")
+                    player.sendMessage("${ChatColor.RED}Please wait to use that ability!")
                 } else {
                     player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 200, 4, true, false))
                     player.playEffect(EntityEffect.BREAK_EQUIPMENT_CHESTPLATE)
