@@ -1,7 +1,7 @@
 # Crypt Plugin
 
 
-[![Lisence](https://img.shields.io/badge/lisence-MIT-brightgreen.svg)](https://github.com/bigratenthusiast/crypt/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/bigratenthusiast/crypt/blob/main/LICENSE)
 
 The crypt and catacombs pvp plugin
 
@@ -9,19 +9,18 @@ The crypt and catacombs pvp plugin
 
 ## Installation
 
-just build it i dunno
+With maven installed run `mvn package`
 
 ### Setup
 
-Its a spigot plugin put it in your plugins folder or something
+Add the plugin to your server's `plugins/` folder
 
 ## Usage
 
 Run `/help crypt` for a list of commands
 
 ## Other
-This plugin was made for a private server and alot of the features have to do with the kits, I'm just open sourcing it for the heck of it
-
+This plugin was created for a private server; I just decided to open source it for the heck of it.
 
 ## Contributing
 Pull requests are welcome!
@@ -29,5 +28,6 @@ Pull requests are welcome!
 ## Contributors List
  - bigrat enthusiast
  - sourtaste
+ - 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
