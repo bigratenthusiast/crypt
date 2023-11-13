@@ -38,10 +38,10 @@ import java.util.function.Consumer
 const val totemCoolDown: Long = 900
 const val dashCoolDown: Long = 620
 const val untilSlow: Long = 200
-const val rodCoolDown: Long = 300
+const val rodCoolDown: Long = 100
 
-const val schematicFilename = "crypt_pvp_s1_082721_iter1.schem"
-val schematicPasteLocation = BlockVector3.at(7, 24, -1)
+val schematicFilename: String = "crypt_pvp_s1_082721_iter1.schem"
+val schematicPasteLocation: BlockVector3 = BlockVector3.at(7, 24, -1)
 
 val dashCoolDowns: CopyOnWriteArrayList<UUID> = CopyOnWriteArrayList()
 val rodCoolDowns: CopyOnWriteArrayList<UUID> = CopyOnWriteArrayList()
@@ -74,7 +74,7 @@ class Main : JavaPlugin(), Listener, CommandExecutor {
                     player.teleport(
                         Location(
                             player.world,
-                            ((random.nextInt(10)) - 65).toDouble(),
+                            (random.nextInt(10) - 65).toDouble(),
                             84.toDouble(),
                             (random.nextInt(16) - 346).toDouble()
                         ), PlayerTeleportEvent.TeleportCause.END_GATEWAY
